@@ -1,4 +1,9 @@
-.{ .name = .blaze, .version = "0.0.0", .fingerprint = 0xf53d3e37e2a242ba, .paths = .{
+.{ .name = .blaze, .version = "0.0.0", .dependencies = .{
+        .SDL = .{
+            .url = "https://github.com/libsdl-org/SDL/releases/download/release-3.2.16/SDL3-devel-3.2.16-VC.zip",
+            .hash = "N-V-__8AAGqtHwNhEaA0cpBZZPzN_eqPIP4YqTmbPfymPhL2",
+        },
+    }, .fingerprint = 0xf53d3e37e2a242ba, .paths = .{
     "build.zig",
     "build.zig.zon",
     "src/main.zig",

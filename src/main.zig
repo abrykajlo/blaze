@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const c = @cImport({
+    @cInclude("SDL3/SDL.h");
     @cInclude("vulkan/vulkan.h");
 });
 
