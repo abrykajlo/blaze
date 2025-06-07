@@ -27,14 +27,18 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: u32) !Vulka
 
     try vulkan_app.checkValidationLayers();
 
-    const create_info: c.VkInstanceCreateInfo = .{
+    var create_info: c.VkInstanceCreateInfo = .{
         .sType = c.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = null,
         .flags = 0,
         .pApplicationInfo = &vulkan_app.app_info,
-        .enabledLayerCount = validation_layers.len,
-        .ppEnabledLayerNames = @ptrCast(validation_layers),
     };
+
+    if (enable_validation_layers) {
+        create_info.enabledLayerCount = validation_layers.len;
+        create_info.ppEnabledLayerNames = @ptrCast(validation_layers);
+    }
+
     if (c.vkCreateInstance(&create_info, null, &vulkan_app.instance) != c.VK_SUCCESS) {
         return error.CreateInstanceFailed;
     }
@@ -47,16 +51,16 @@ pub fn deinit(self: *VulkanApp) void {
 }
 
 fn checkValidationLayers(self: *const VulkanApp) !void {
-    var property_count: u32 = undefined;
-    _ = c.vkEnumerateInstanceLayerProperties(&property_count, null);
-    const available_layers = try self.allocator.alloc(c.VkLayerProperties, property_count);
+    var layer_count: u32 = undefined;
+    _ = c.vkEnumerateInstanceLayerProperties(&layer_count, null);
+    const available_layers = try self.allocator.alloc(c.VkLayerProperties, layer_count);
     defer self.allocator.free(available_layers);
-    _ = c.vkEnumerateInstanceLayerProperties(&property_count, @ptrCast(available_layers));
+    _ = c.vkEnumerateInstanceLayerProperties(&layer_count, @ptrCast(available_layers));
 
     outer: for (validation_layers) |layer_name| {
         for (available_layers) |*layer_properties| {
-            std.debug.print("{s}\n", .{&layer_properties.layerName});
-            if (std.mem.eql(u8, layer_name, &layer_properties.layerName)) {
+            const len = std.mem.len(@as([*:0]u8, @ptrCast(&layer_properties.layerName)));
+            if (std.mem.eql(u8, layer_name, layer_properties.layerName[0..len])) {
                 continue :outer;
             }
         }
