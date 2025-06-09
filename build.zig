@@ -32,11 +32,10 @@ pub fn build(b: *std.Build) !void {
     exe.addLibraryPath(sdl.path("lib/x64"));
 
     exe.linkSystemLibrary("SDL3");
-    const sdl_dll = b.addInstallFile(sdl.path("lib/x64/SDL3.dll"), ".");
 
     const run = b.addRunArtifact(exe);
+    run.addPathDir(sdl.path("lib/x64").getPath(b));
 
     const run_step = b.step("run", "run blaze");
     run_step.dependOn(&run.step);
-    run_step.dependOn(&sdl_dll.step);
 }

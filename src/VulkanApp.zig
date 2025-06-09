@@ -1,9 +1,9 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
-const ArrayList = std.ArrayList;
 
 pub const c = @cImport({
+    @cInclude("SDL3/SDL_vulkan.h");
     @cInclude("vulkan/vulkan.h");
 });
 
@@ -25,16 +25,20 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: u32) !Vulka
         .apiVersion = c.VK_API_VERSION_1_4,
     };
 
-    try vulkan_app.checkValidationLayers();
+    const extensions = try getRequiredExtensions(allocator);
+    defer allocator.free(extensions);
 
     var create_info: c.VkInstanceCreateInfo = .{
         .sType = c.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext = null,
         .flags = 0,
         .pApplicationInfo = &vulkan_app.app_info,
+        .enabledExtensionCount = @intCast(extensions.len),
+        .ppEnabledExtensionNames = @ptrCast(extensions),
     };
 
     if (enable_validation_layers) {
+        try vulkan_app.checkValidationLayers();
         create_info.enabledLayerCount = validation_layers.len;
         create_info.ppEnabledLayerNames = @ptrCast(validation_layers);
     }
@@ -69,7 +73,34 @@ fn checkValidationLayers(self: *const VulkanApp) !void {
     }
 }
 
-const enable_validation_layers: bool = builtin.mode == .Debug;
+fn getRequiredExtensions(allocator: Allocator) ![]const [*c]const u8 {
+    var sdl_extension_count: u32 = undefined;
+    const sdl_extensions = c.SDL_Vulkan_GetInstanceExtensions(&sdl_extension_count);
+
+    const extensions = try allocator.alloc([*c]const u8, sdl_extension_count + required_extensions.len);
+    errdefer allocator.free(extensions);
+
+    var i: usize = 0;
+    for (required_extensions) |extension| {
+        extensions[i] = extension;
+        i += 1;
+    }
+
+    for (0..sdl_extension_count) |j| {
+        extensions[i] = sdl_extensions[j];
+        i += 1;
+    }
+
+    // query available extensions
+    var extension_count: u32 = undefined;
+    _ = c.vkEnumerateInstanceExtensionProperties(null, &extension_count, null);
+
+    return extensions;
+}
+
+const enable_validation_layers = builtin.mode == .Debug;
+
+const required_extensions: []const []const u8 = &.{};
 
 const validation_layers: []const []const u8 = &.{"VK_LAYER_KHRONOS_validation"};
 
