@@ -25,7 +25,7 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: u32) !Vulka
         .apiVersion = c.VK_API_VERSION_1_4,
     };
 
-    const extensions = try getRequiredExtensions(allocator);
+    const extensions = try vulkan_app.getRequiredExtensions();
     defer allocator.free(extensions);
 
     var create_info: c.VkInstanceCreateInfo = .{
@@ -63,8 +63,7 @@ fn checkValidationLayers(self: *const VulkanApp) !void {
 
     outer: for (validation_layers) |layer_name| {
         for (available_layers) |*layer_properties| {
-            const len = std.mem.len(@as([*:0]u8, @ptrCast(&layer_properties.layerName)));
-            if (std.mem.eql(u8, layer_name, layer_properties.layerName[0..len])) {
+            if (eql(layer_name, @ptrCast(&layer_properties.layerName))) {
                 continue :outer;
             }
         }
@@ -73,12 +72,12 @@ fn checkValidationLayers(self: *const VulkanApp) !void {
     }
 }
 
-fn getRequiredExtensions(allocator: Allocator) ![]const [*c]const u8 {
+fn getRequiredExtensions(self: *const VulkanApp) ![]const [*:0]const u8 {
     var sdl_extension_count: u32 = undefined;
     const sdl_extensions = c.SDL_Vulkan_GetInstanceExtensions(&sdl_extension_count);
 
-    const extensions = try allocator.alloc([*c]const u8, sdl_extension_count + required_extensions.len);
-    errdefer allocator.free(extensions);
+    var extensions = try self.allocator.alloc([*:0]const u8, sdl_extension_count + required_extensions.len);
+    errdefer self.allocator.free(extensions);
 
     var i: usize = 0;
     for (required_extensions) |extension| {
@@ -94,17 +93,44 @@ fn getRequiredExtensions(allocator: Allocator) ![]const [*c]const u8 {
     // query available extensions
     var extension_count: u32 = undefined;
     _ = c.vkEnumerateInstanceExtensionProperties(null, &extension_count, null);
+    const available_extensions = try self.allocator.alloc(c.VkExtensionProperties, extension_count);
+    defer self.allocator.free(available_extensions);
+    _ = c.vkEnumerateInstanceExtensionProperties(null, &extension_count, @ptrCast(available_extensions));
+
+    outer: for (extensions) |extension_name| {
+        for (available_extensions) |*extension_properties| {
+            if (eql(extension_name, @ptrCast(&extension_properties.extensionName))) {
+                continue :outer;
+            }
+        }
+
+        return error.ExtensionUnavailable;
+    }
 
     return extensions;
 }
 
+fn eql(a: [*:0]const u8, b: [*:0]const u8) bool {
+    var i: usize = 0;
+    while (a[i] != 0 or b[i] != 0) : (i += 1) {
+        if (a[i] != b[i])
+            return false;
+    }
+
+    if (a[i] == b[i])
+        return true;
+
+    return false;
+}
+
 const enable_validation_layers = builtin.mode == .Debug;
 
-const required_extensions: []const []const u8 = &.{};
+const required_extensions: []const [*:0]const u8 = &.{};
 
-const validation_layers: []const []const u8 = &.{"VK_LAYER_KHRONOS_validation"};
+const validation_layers: []const [*:0]const u8 = &.{"VK_LAYER_KHRONOS_validation"};
 
 const VulkanError = error{
     CreateInstanceFailed,
     ValidationLayerUnavailable,
+    ExtensionUnavailable,
 };

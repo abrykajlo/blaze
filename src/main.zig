@@ -15,4 +15,15 @@ pub fn main() !void {
 
     var vulkan_app = try VulkanApp.init(allocator, "blaze demo", VulkanApp.c.VK_MAKE_VERSION(0, 0, 0));
     defer vulkan_app.deinit();
+
+    running: while (true) {
+        c.SDL_PumpEvents();
+
+        var event: c.SDL_Event = undefined;
+        while (c.SDL_PollEvent(@ptrCast(&event))) {
+            if (event.type == c.SDL_EVENT_QUIT) {
+                break :running;
+            }
+        }
+    }
 }

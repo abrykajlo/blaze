@@ -24,7 +24,8 @@ pub fn init() !Window {
 }
 
 pub fn deinit(self: *Window) void {
-    c.SDL_DestroyWindow(self.sdl_window);
+    defer c.SDL_Quit();
+    defer c.SDL_DestroyWindow(self.sdl_window);
 }
 
 const WindowError = error{
