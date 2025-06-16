@@ -6,11 +6,11 @@ const vk = @import("vk.zig");
 
 const Instance = @This();
 
-instance: *anyopaque,
+ptr: *anyopaque,
 
 pub fn create(create_info: *const vk.InstanceCreateInfo) CreateInstanceError!Instance {
     var instance: Instance = undefined;
-    const result = c.vkCreateInstance(@ptrCast(create_info), null, @ptrCast(&instance));
+    const result = c.vkCreateInstance(@ptrCast(create_info), null, @ptrCast(&instance.ptr));
     if (result != c.VK_SUCCESS) {
         return switch (result) {
             c.VK_ERROR_OUT_OF_HOST_MEMORY => error.OutOfHostMemory,
@@ -25,8 +25,8 @@ pub fn create(create_info: *const vk.InstanceCreateInfo) CreateInstanceError!Ins
     return instance;
 }
 
-pub fn destroy(self: *const Instance) void {
-    c.vkDestroyInstance(@ptrCast(self.instance), null);
+pub fn destroy(self: Instance) void {
+    c.vkDestroyInstance(@ptrCast(self.ptr), null);
 }
 
 const CreateInstanceError = error{

@@ -16,7 +16,7 @@ pub fn enumerateInstanceExtensionProperties(allocator: Allocator, layer_name: ?S
 }
 
 pub const ExtensionProperties = extern struct {
-    extension_name: [256]u8 = .{0} ** 256,
+    extension_name: [256]u8,
     spec_version: u32,
 };
 
@@ -29,10 +29,10 @@ pub fn enumerateInstanceLayerProperties(allocator: Allocator) ![]LayerProperties
 }
 
 pub const LayerProperties = extern struct {
-    layer_name: [256]u8 = .{0} ** 256,
+    layer_name: [256]u8,
     spec_version: u32,
     implementation_version: u32,
-    description: [256]u8 = .{0} ** 256,
+    description: [256]u8,
 };
 
 pub const String = [*:0]const u8;
@@ -70,15 +70,25 @@ pub const ApplicationInfo = extern struct {
     api_version: ApiVersion = @bitCast(@as(u32, 0)),
 };
 
+pub const Slice = extern struct {
+    len: u32 = 0,
+    ptr: ?[*]const String = null,
+
+    pub fn fromSlice(slice: []const String) Slice {
+        return .{
+            .len = @intCast(slice.len),
+            .ptr = slice.ptr,
+        };
+    }
+};
+
 pub const InstanceCreateInfo = extern struct {
     type: StructureType = .instance_create_info,
     next: ?*const anyopaque = null,
     flags: InstanceCreateFlags = .{},
     application_info: ?*const ApplicationInfo = null,
-    enabled_layer_count: u32 = 0,
-    enabled_layer_names: ?[*]const String = null,
-    enabled_extension_count: u32 = 0,
-    enabled_extension_names: ?[*]const String = null,
+    enabled_layer_names: Slice = .{},
+    enabled_extension_names: Slice = .{},
 };
 
 const expect = std.testing.expect;

@@ -30,14 +30,12 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
 
     var create_info: vk.InstanceCreateInfo = .{
         .application_info = &blaze_app.app_info,
-        .enabled_extension_count = @intCast(extensions.len),
-        .enabled_extension_names = @ptrCast(extensions),
+        .enabled_extension_names = .fromSlice(extensions),
     };
 
     if (enable_validation_layers) {
         try blaze_app.checkValidationLayers();
-        create_info.enabled_layer_count = @intCast(validation_layers.len);
-        create_info.enabled_extension_names = @ptrCast(validation_layers);
+        create_info.enabled_layer_names = .fromSlice(validation_layers);
     }
 
     blaze_app.instance = try vk.Instance.create(&create_info);
