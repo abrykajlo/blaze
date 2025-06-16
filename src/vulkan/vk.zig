@@ -7,42 +7,35 @@ const c = @cImport({
 
 pub const Instance = @import("Instance.zig");
 
-pub fn createInstance(create_info: *const InstanceCreateInfo, instance: *Instance) Result {
-    const result = c.vkCreateInstance(@ptrCast(create_info), null, @ptrCast(instance));
-    return @enumFromInt(result);
-}
-
-pub fn enumerateInstanceExtensionProperties(allocator: Allocator, layer_name: ?String, properties: *[]ExtensionProperties) !void {
+pub fn enumerateInstanceExtensionProperties(allocator: Allocator, layer_name: ?String) ![]ExtensionProperties {
     var property_count: u32 = undefined;
     _ = c.vkEnumerateInstanceExtensionProperties(layer_name, &property_count, null);
-    properties.* = try allocator.alloc(ExtensionProperties, property_count);
-    _ = c.vkEnumerateInstanceExtensionProperties(layer_name, properties.len, @ptrCast(properties.*));
+    const properties = try allocator.alloc(ExtensionProperties, property_count);
+    _ = c.vkEnumerateInstanceExtensionProperties(layer_name, &property_count, @ptrCast(properties));
+    return properties;
 }
 
-pub const ExtensionProperties = struct {
-    extension_name: [256]u8,
+pub const ExtensionProperties = extern struct {
+    extension_name: [256]u8 = .{0} ** 256,
     spec_version: u32,
 };
 
-pub fn enumerateInstanceLayerProperties(allocator: Allocator, properties: *[]LayerProperties) !void {
+pub fn enumerateInstanceLayerProperties(allocator: Allocator) ![]LayerProperties {
     var property_count: u32 = undefined;
     _ = c.vkEnumerateInstanceLayerProperties(&property_count, null);
-    properties.* = try allocator.alloc(LayerProperties, property_count);
-    _ = c.vkEnumerateInstanceLayerProperties(&property_count, @ptrCast(properties.*));
+    const properties = try allocator.alloc(LayerProperties, property_count);
+    _ = c.vkEnumerateInstanceLayerProperties(&property_count, @ptrCast(properties));
+    return properties;
 }
 
-pub const LayerProperties = struct {
-    layer_name: [256]u8,
+pub const LayerProperties = extern struct {
+    layer_name: [256]u8 = .{0} ** 256,
     spec_version: u32,
     implementation_version: u32,
-    description: [256]u8,
+    description: [256]u8 = .{0} ** 256,
 };
 
 pub const String = [*:0]const u8;
-
-pub const Result = enum(c_int) {
-    success = c.VK_SUCCESS,
-};
 
 pub const InstanceCreateFlags = packed struct(u32) {
     enumerate_portability_khr: u1 = 0,
@@ -67,7 +60,7 @@ pub const StructureType = enum(c_int) {
     instance_create_info = c.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 };
 
-pub const ApplicationInfo = struct {
+pub const ApplicationInfo = extern struct {
     type: StructureType = .application_info,
     next: ?*const anyopaque = null,
     application_name: ?String = null,
@@ -77,7 +70,7 @@ pub const ApplicationInfo = struct {
     api_version: ApiVersion = @bitCast(@as(u32, 0)),
 };
 
-pub const InstanceCreateInfo = struct {
+pub const InstanceCreateInfo = extern struct {
     type: StructureType = .instance_create_info,
     next: ?*const anyopaque = null,
     flags: InstanceCreateFlags = .{},
@@ -108,4 +101,12 @@ test "Version should match VK_MAKE_VERSION" {
 test "Enumerate Portability should match the bitmask" {
     const flags: InstanceCreateFlags = @bitCast(c.VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR);
     try expect(flags.enumerate_portability_khr == 1);
+}
+
+test "Struct sizes" {
+    try expect(@sizeOf(LayerProperties) == @sizeOf(c.VkLayerProperties));
+    try expect(@sizeOf(ExtensionProperties) == @sizeOf(c.VkExtensionProperties));
+    try expect(@sizeOf(ApplicationInfo) == @sizeOf(c.VkApplicationInfo));
+    try expect(@sizeOf(InstanceCreateInfo) == @sizeOf(c.VkInstanceCreateInfo));
+    try expect(@sizeOf(Instance) == @sizeOf(c.VkInstance));
 }

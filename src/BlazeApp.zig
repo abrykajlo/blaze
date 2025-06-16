@@ -36,34 +36,31 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
 
     if (enable_validation_layers) {
         try blaze_app.checkValidationLayers();
-        create_info.enabled_layer_count = validation_layers.len;
+        create_info.enabled_layer_count = @intCast(validation_layers.len);
         create_info.enabled_extension_names = @ptrCast(validation_layers);
     }
 
-    if (vk.createInstance(&create_info, &blaze_app.instance) != .success) {
-        return error.CreateInstanceFailed;
-    }
+    blaze_app.instance = try vk.Instance.create(&create_info);
 
     return blaze_app;
 }
 
 pub fn deinit(self: *BlazeApp) void {
-    defer self.instance.deinit();
+    defer self.instance.destroy();
 }
 
 fn checkValidationLayers(self: *const BlazeApp) !void {
-    var available_layers: []vk.LayerProperties = undefined;
-    try vk.enumerateInstanceLayerProperties(self.allocator, &available_layers);
+    const available_layers = try vk.enumerateInstanceLayerProperties(self.allocator);
     defer self.allocator.free(available_layers);
 
     outer: for (validation_layers) |layer_name| {
         for (available_layers) |*layer_properties| {
-            if (eql(layer_name, @ptrCast(&layer_properties.layer_name))) {
+            if (std.mem.eql(u8, std.mem.span(layer_name), std.mem.span(@as([*:0]u8, @ptrCast(&layer_properties.layer_name))))) {
                 continue :outer;
             }
         }
 
-        return error.ValidationLayerUnavailable;
+        return error.LayerNotPresent;
     }
 }
 
@@ -86,38 +83,24 @@ fn getRequiredExtensions(self: *const BlazeApp) ![]const vk.String {
     }
 
     // query available extensions
-    var available_extensions: []vk.ExtensionProperties = undefined;
-    try vk.enumerateInstanceExtensionProperties(self.allocator, null, &available_extensions);
+    const available_extensions = try vk.enumerateInstanceExtensionProperties(self.allocator, null);
     defer self.allocator.free(available_extensions);
 
     outer: for (extensions) |extension_name| {
         for (available_extensions) |*extension_properties| {
-            if (eql(extension_name, @ptrCast(&extension_properties.extension_name))) {
+            if (std.mem.eql(u8, std.mem.span(extension_name), std.mem.span(@as([*:0]u8, @ptrCast(&extension_properties.extension_name))))) {
                 continue :outer;
             }
         }
 
-        return error.ExtensionUnavailable;
+        return error.ExtensionNotPresent;
     }
 
     return extensions;
 }
 
-fn eql(a: [*:0]const u8, b: [*:0]const u8) bool {
-    var i: usize = 0;
-    while (a[i] != 0 or b[i] != 0) : (i += 1) {
-        if (a[i] != b[i])
-            return false;
-    }
-
-    if (a[i] == b[i])
-        return true;
-
-    return false;
-}
-
 const enable_validation_layers = builtin.mode == .Debug;
 
-const required_extensions: []const [*:0]const u8 = &.{};
+const required_extensions: []const vk.String = &.{};
 
-const validation_layers: []const [*:0]const u8 = &.{"VK_LAYER_KHRONOS_validation"};
+const validation_layers: []const vk.String = &.{"VK_LAYER_KHRONOS_validation"};
