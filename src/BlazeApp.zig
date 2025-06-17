@@ -18,27 +18,33 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
     var blaze_app: BlazeApp = undefined;
     blaze_app.allocator = allocator;
     blaze_app.app_info = .{
-        .application_name = @ptrCast(app_name),
-        .application_version = app_version,
-        .engine_name = "blaze",
-        .engine_version = .{ .major = 0, .minor = 0, .patch = 0 },
-        .api_version = .{ .variant = 0, .major = 1, .minor = 4, .patch = 0 },
+        .pApplicationName = @ptrCast(app_name),
+        .applicationVersion = app_version,
+        .pEngineName = "blaze",
+        .engineVersion = .{ .major = 0, .minor = 0, .patch = 0 },
+        .apiVersion = .{ .variant = 0, .major = 1, .minor = 4, .patch = 0 },
     };
 
     const extensions = try blaze_app.getRequiredExtensions();
     defer allocator.free(extensions);
 
-    var create_info: vk.InstanceCreateInfo = .{
-        .application_info = &blaze_app.app_info,
-        .enabled_extension_names = .fromSlice(extensions),
+    var create_info: vk.Instance.CreateInfo = .{
+        .pApplicationInfo = &blaze_app.app_info,
     };
+
+    create_info.setEnabledExtensionNames(extensions);
 
     if (enable_validation_layers) {
         try blaze_app.checkValidationLayers();
-        create_info.enabled_layer_names = .fromSlice(validation_layers);
+        create_info.setEnabledLayerNames(validation_layers);
     }
 
     blaze_app.instance = try vk.Instance.create(&create_info);
+
+    const physical_devices = try blaze_app.instance.enumeratePhysicalDevices(allocator);
+    for (physical_devices) |*physical_device| {
+        std.debug.print("{s}\n", .{physical_device.getProperties().deviceName});
+    }
 
     return blaze_app;
 }
@@ -53,7 +59,7 @@ fn checkValidationLayers(self: *const BlazeApp) !void {
 
     outer: for (validation_layers) |layer_name| {
         for (available_layers) |*layer_properties| {
-            if (std.mem.eql(u8, std.mem.span(layer_name), std.mem.span(@as([*:0]u8, @ptrCast(&layer_properties.layer_name))))) {
+            if (std.mem.eql(u8, std.mem.span(layer_name), std.mem.span(@as([*:0]u8, @ptrCast(&layer_properties.layerName))))) {
                 continue :outer;
             }
         }
@@ -86,7 +92,7 @@ fn getRequiredExtensions(self: *const BlazeApp) ![]const vk.String {
 
     outer: for (extensions) |extension_name| {
         for (available_extensions) |*extension_properties| {
-            if (std.mem.eql(u8, std.mem.span(extension_name), std.mem.span(@as([*:0]u8, @ptrCast(&extension_properties.extension_name))))) {
+            if (std.mem.eql(u8, std.mem.span(extension_name), std.mem.span(@as([*:0]u8, @ptrCast(&extension_properties.extensionName))))) {
                 continue :outer;
             }
         }

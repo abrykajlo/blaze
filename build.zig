@@ -41,17 +41,17 @@ pub fn build(b: *std.Build) !void {
     run_step.dependOn(&run.step);
 
     // Tests
-    const tests = b.addTest(.{
-        .name = "tests",
+    const vk_tests = b.addTest(.{
+        .name = "vktests",
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("src/vulkan/vk.zig"),
+        .root_source_file = b.path("src/vulkan/tests.zig"),
     });
 
-    tests.addIncludePath(vulkan_sdk_path.path(b, "Include"));
+    vk_tests.addIncludePath(vulkan_sdk_path.path(b, "Include"));
 
-    const run_tests = b.addRunArtifact(tests);
+    const run_vk_tests = b.addRunArtifact(vk_tests);
 
     const tests_step = b.step("tests", "run tests");
-    tests_step.dependOn(&run_tests.step);
+    tests_step.dependOn(&run_vk_tests.step);
 }
