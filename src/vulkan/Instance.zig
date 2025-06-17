@@ -40,8 +40,8 @@ pub fn enumeratePhysicalDevices(self: Instance, allocator: std.mem.Allocator) ![
 }
 
 pub const CreateFlags = packed struct(u32) {
-    enumerate_portability_khr: u1 = 0,
-    _: u31 = 0,
+    instance_create_enumerate_portability_khr: u1 = 0,
+    _0: u31 = 0,
 };
 
 pub const CreateInfo = extern struct {

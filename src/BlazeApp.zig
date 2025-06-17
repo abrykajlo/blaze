@@ -42,8 +42,11 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
     blaze_app.instance = try vk.Instance.create(&create_info);
 
     const physical_devices = try blaze_app.instance.enumeratePhysicalDevices(allocator);
+    defer allocator.free(physical_devices);
     for (physical_devices) |*physical_device| {
-        std.debug.print("{s}\n", .{physical_device.getProperties().deviceName});
+        const props = physical_device.getProperties();
+        const version = props.driverVersion;
+        std.debug.print("{} {} {}\n", .{ version.major, version.minor, version.patch });
     }
 
     return blaze_app;
@@ -84,20 +87,6 @@ fn getRequiredExtensions(self: *const BlazeApp) ![]const vk.String {
     for (0..sdl_extension_count) |j| {
         extensions[i] = sdl_extensions[j];
         i += 1;
-    }
-
-    // query available extensions
-    const available_extensions = try vk.enumerateInstanceExtensionProperties(self.allocator, null);
-    defer self.allocator.free(available_extensions);
-
-    outer: for (extensions) |extension_name| {
-        for (available_extensions) |*extension_properties| {
-            if (std.mem.eql(u8, std.mem.span(extension_name), std.mem.span(@as([*:0]u8, @ptrCast(&extension_properties.extensionName))))) {
-                continue :outer;
-            }
-        }
-
-        return error.ExtensionNotPresent;
     }
 
     return extensions;
