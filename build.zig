@@ -33,9 +33,25 @@ pub fn build(b: *std.Build) !void {
 
     exe.linkSystemLibrary("SDL3");
 
+    // Run
     const run = b.addRunArtifact(exe);
     run.addPathDir(sdl.path("lib/x64").getPath(b));
 
     const run_step = b.step("run", "run blaze");
     run_step.dependOn(&run.step);
+
+    // Tests
+    const vk_tests = b.addTest(.{
+        .name = "vktests",
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/vulkan/tests.zig"),
+    });
+
+    vk_tests.addIncludePath(vulkan_sdk_path.path(b, "Include"));
+
+    const run_vk_tests = b.addRunArtifact(vk_tests);
+
+    const tests_step = b.step("tests", "run tests");
+    tests_step.dependOn(&run_vk_tests.step);
 }
