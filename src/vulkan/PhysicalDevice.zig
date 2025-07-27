@@ -42,6 +42,7 @@ pub fn createDevice(self: PhysicalDevice, create_info: *const vk.Device.CreateIn
             c.VK_ERROR_FEATURE_NOT_PRESENT => error.FeatureNotPresent,
             c.VK_ERROR_TOO_MANY_OBJECTS => error.TooManyObjects,
             c.VK_ERROR_DEVICE_LOST => error.DeviceLost,
+            else => unreachable,
         };
     }
     return device;

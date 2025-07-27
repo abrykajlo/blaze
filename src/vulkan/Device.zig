@@ -4,7 +4,13 @@ const c = @cImport({
 
 const vk = @import("vk.zig");
 
+const Device = @This();
+
 ptr: *anyopaque,
+
+pub fn destroy(self: Device) void {
+    c.vkDestroyDevice(@ptrCast(self.ptr), null);
+}
 
 pub const Size = u64;
 

@@ -20,7 +20,7 @@ pub fn main() !void {
         c.SDL_PumpEvents();
 
         var event: c.SDL_Event = undefined;
-        while (c.SDL_PollEvent(@ptrCast(&event))) {
+        while (c.SDL_PollEvent(&event)) {
             if (event.type == c.SDL_EVENT_QUIT) {
                 break :running;
             }
