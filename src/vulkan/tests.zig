@@ -51,4 +51,5 @@ test "Struct sizes" {
     try expect(@sizeOf(vk.ApplicationInfo) == @sizeOf(c.VkApplicationInfo));
     try expect(@sizeOf(vk.Instance.CreateInfo) == @sizeOf(c.VkInstanceCreateInfo));
     try expect(@sizeOf(vk.Instance) == @sizeOf(c.VkInstance));
+    try expect(@sizeOf(vk.Device.CreateInfo) == @sizeOf(c.VkDeviceCreateInfo));
 }

@@ -33,15 +33,15 @@ pub const QueueFamilyProperties = extern struct {
 };
 
 pub const QueueFlags = packed struct(u32) {
-    queue_graphics_bit: u1 = 0,
-    queue_compute_bit: u1 = 0,
-    queue_transfer_bit: u1 = 0,
-    queue_sparse_binding_bit: u1 = 0,
-    queue_protected_bit: u1 = 0,
-    queue_video_decode_bit_khr: u1 = 0,
-    queue_video_encode_bit_khr: u1 = 0,
+    queue_graphics_bit: bool = false,
+    queue_compute_bit: bool = false,
+    queue_transfer_bit: bool = false,
+    queue_sparse_binding_bit: bool = false,
+    queue_protected_bit: bool = false,
+    queue_video_decode_bit_khr: bool = false,
+    queue_video_encode_bit_khr: bool = false,
     _0: u1 = 0,
-    queue_optical_flow_bit_nv: u1 = 0,
+    queue_optical_flow_bit_nv: bool = false,
     _1: u23 = 0,
 };
 

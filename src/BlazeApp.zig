@@ -7,17 +7,32 @@ pub const c = @cImport({
 });
 
 const vk = @import("vulkan/vk.zig");
+const Device = @import("device.zig").Device;
+const DeviceRequirements = @import("device.zig").Requirements;
 
 const BlazeApp = @This();
 
 instance: vk.Instance,
 app_info: vk.ApplicationInfo,
+device: Device,
 allocator: Allocator,
 
 pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version) !BlazeApp {
     var blaze_app: BlazeApp = undefined;
-    blaze_app.allocator = allocator;
-    blaze_app.app_info = .{
+    try blaze_app.createInstance(allocator, app_name, app_version);
+    try blaze_app.createDevice();
+
+    return blaze_app;
+}
+
+pub fn deinit(self: *BlazeApp) void {
+    defer self.instance.destroy();
+    defer self.device.deinit();
+}
+
+fn createInstance(self: *BlazeApp, allocator: Allocator, app_name: []const u8, app_version: vk.Version) !void {
+    self.allocator = allocator;
+    self.app_info = .{
         .pApplicationName = @ptrCast(app_name),
         .applicationVersion = app_version,
         .pEngineName = "blaze",
@@ -25,35 +40,38 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
         .apiVersion = .{ .variant = 0, .major = 1, .minor = 4, .patch = 0 },
     };
 
-    const extensions = try blaze_app.getRequiredExtensions();
+    const extensions = try self.getRequiredExtensions();
     defer allocator.free(extensions);
 
     var create_info: vk.Instance.CreateInfo = .{
-        .pApplicationInfo = &blaze_app.app_info,
+        .pApplicationInfo = &self.app_info,
     };
 
-    create_info.setEnabledExtensionNames(extensions);
+    create_info.enabledExtensionCount = @intCast(extensions.len);
+    create_info.ppEnabledExtensionNames = @ptrCast(extensions.ptr);
 
     if (enable_validation_layers) {
-        try blaze_app.checkValidationLayers();
-        create_info.setEnabledLayerNames(validation_layers);
+        try self.checkValidationLayers();
+        create_info.enabledLayerCount = @intCast(validation_layers.len);
+        create_info.ppEnabledLayerNames = @ptrCast(validation_layers.ptr);
     }
 
-    blaze_app.instance = try vk.Instance.create(&create_info);
-
-    const physical_devices = try blaze_app.instance.enumeratePhysicalDevices(allocator);
-    defer allocator.free(physical_devices);
-    for (physical_devices) |*physical_device| {
-        const props = physical_device.getProperties();
-        const version = props.driverVersion;
-        std.debug.print("{} {} {}\n", .{ version.major, version.minor, version.patch });
-    }
-
-    return blaze_app;
+    self.instance = try vk.Instance.create(&create_info);
 }
 
-pub fn deinit(self: *BlazeApp) void {
-    defer self.instance.destroy();
+fn createDevice(self: *BlazeApp) !void {
+    const physical_devices = try self.instance.enumeratePhysicalDevices(self.allocator);
+    defer self.allocator.free(physical_devices);
+
+    const device_req: DeviceRequirements = .{ .graphicsSupport = true, .presentationSupport = true, .integratedGPU = true };
+    for (physical_devices) |physical_device| {
+        if (try device_req.queryPhysicalDevice(self.allocator, self.instance, physical_device)) |queues| {
+            self.device = try .init(self.allocator, physical_device, &device_req, &queues);
+            return;
+        }
+    }
+
+    return error.NoSuitableDevice;
 }
 
 fn checkValidationLayers(self: *const BlazeApp) !void {
@@ -97,3 +115,7 @@ const enable_validation_layers = builtin.mode == .Debug;
 const required_extensions: []const vk.String = &.{};
 
 const validation_layers: []const vk.String = &.{"VK_LAYER_KHRONOS_validation"};
+
+const BlazeError = error{
+    NoSuitableDevice,
+};
