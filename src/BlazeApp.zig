@@ -63,7 +63,7 @@ fn createDevice(self: *BlazeApp) !void {
     const physical_devices = try self.instance.enumeratePhysicalDevices(self.allocator);
     defer self.allocator.free(physical_devices);
 
-    const device_req: DeviceRequirements = .{ .graphicsSupport = true, .presentationSupport = true, .integratedGPU = true };
+    const device_req: DeviceRequirements = .{ .graphicsSupport = true, .presentationSupport = true, .deviceType = .discrete_gpu };
     for (physical_devices) |physical_device| {
         if (try device_req.queryPhysicalDevice(self.allocator, self.instance, physical_device)) |queues| {
             self.device = try .init(self.allocator, physical_device, &device_req, &queues);

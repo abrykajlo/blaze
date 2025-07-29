@@ -62,13 +62,22 @@ pub const Device = struct {
     }
 };
 
+pub const DeviceType = enum {
+    integrated_gpu,
+    discrete_gpu,
+};
+
 pub const Requirements = struct {
     graphicsSupport: bool,
     presentationSupport: bool,
-    integratedGPU: bool,
+    deviceType: DeviceType,
 
     pub fn queryPhysicalDevice(self: *const Requirements, allocator: Allocator, instance: vk.Instance, physical_device: vk.PhysicalDevice) !?Queues {
-        if (self.integratedGPU and physical_device.getProperties().deviceType != .integrated_gpu) {
+        const matching_device_type = physical_device.getProperties().deviceType != switch (self.deviceType) {
+            .integrated_gpu => vk.PhysicalDevice.Type.integrated_gpu,
+            .discrete_gpu => vk.PhysicalDevice.Type.discrete_gpu,
+        };
+        if (matching_device_type) {
             return null;
         }
 
@@ -104,7 +113,6 @@ pub const Requirements = struct {
                 return null;
             }
         }
-
         return queues;
     }
 };

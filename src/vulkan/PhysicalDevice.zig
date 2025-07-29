@@ -128,7 +128,7 @@ pub const Properties = extern struct {
     sparseProperties: vk.PhysicalDevice.SparseProperties,
 };
 
-const Type = enum(c_int) {
+pub const Type = enum(c_int) {
     other = c.VK_PHYSICAL_DEVICE_TYPE_OTHER,
     integrated_gpu = c.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
     discrete_gpu = c.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
