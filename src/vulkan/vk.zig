@@ -8,6 +8,9 @@ const c = @cImport({
 pub const Device = @import("Device.zig");
 pub const Instance = @import("Instance.zig");
 pub const PhysicalDevice = @import("PhysicalDevice.zig");
+pub const khr = struct {
+    pub const Surface = @import("SurfaceKHR.zig");
+};
 
 pub fn enumerateInstanceExtensionProperties(allocator: Allocator, layer_name: ?String) ![]ExtensionProperties {
     var property_count: u32 = undefined;

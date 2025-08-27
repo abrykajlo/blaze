@@ -15,7 +15,7 @@ pub const Device = struct {
         var device: Device = undefined;
         device.queues = queues.*;
 
-        var queue_create_infos: std.ArrayList(vk.Device.QueueCreateInfo) = .init(allocator);
+        var queue_create_infos: std.array_list.Managed(vk.Device.QueueCreateInfo) = .init(allocator);
         defer queue_create_infos.deinit();
 
         // set up unique queues
