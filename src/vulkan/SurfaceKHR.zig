@@ -13,8 +13,8 @@ const SurfaceKHR = @This();
 ptr: *anyopaque,
 
 pub fn create(window: *const Window, instance: vk.Instance) !SurfaceKHR {
-    const surface: SurfaceKHR = undefined;
-    if (!c.SDL_Vulkan_CreateSurface(@ptrCast(window.sdl_window), @ptrCast(instance.ptr), null, @ptrCast(@alignCast(surface.ptr)))) {
+    var surface: SurfaceKHR = undefined;
+    if (!c.SDL_Vulkan_CreateSurface(@ptrCast(window.sdl_window), @ptrCast(instance.ptr), null, @ptrCast(&surface.ptr))) {
         return error.CreateSurfaceError;
     }
     return surface;
