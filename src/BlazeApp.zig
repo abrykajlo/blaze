@@ -10,16 +10,21 @@ const vk = @import("vulkan/vk.zig");
 const Device = @import("device.zig").Device;
 const DeviceRequirements = @import("device.zig").Requirements;
 
+const Window = @import("Window.zig");
+
 const BlazeApp = @This();
 
 instance: vk.Instance,
 app_info: vk.ApplicationInfo,
 device: Device,
+surface: vk.khr.Surface,
 allocator: Allocator,
 
-pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version) !BlazeApp {
+pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version, window: *const Window) !BlazeApp {
     var blaze_app: BlazeApp = undefined;
+
     try blaze_app.createInstance(allocator, app_name, app_version);
+    try blaze_app.createSurface(window);
     try blaze_app.createDevice();
 
     return blaze_app;
@@ -27,6 +32,7 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version)
 
 pub fn deinit(self: *BlazeApp) void {
     defer self.instance.destroy();
+    defer self.surface.destroy(self.instance);
     defer self.device.deinit();
 }
 
@@ -57,6 +63,10 @@ fn createInstance(self: *BlazeApp, allocator: Allocator, app_name: []const u8, a
     }
 
     self.instance = try vk.Instance.create(&create_info);
+}
+
+fn createSurface(self: *BlazeApp, window: *const Window) !void {
+    self.surface = try .create(window, self.instance);
 }
 
 fn createDevice(self: *BlazeApp) !void {

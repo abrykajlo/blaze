@@ -6,11 +6,11 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const exe_mod = b.createModule(.{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize });
+
     const exe = b.addExecutable(.{
         .name = "blaze",
-        .target = target,
-        .optimize = optimize,
-        .root_source_file = b.path("src/main.zig"),
+        .root_module = exe_mod,
     });
 
     var env_map = try std.process.getEnvMap(allocator);
@@ -41,11 +41,11 @@ pub fn build(b: *std.Build) !void {
     run_step.dependOn(&run.step);
 
     // Tests
+    const vk_tests_mod = b.createModule(.{ .root_source_file = b.path("src/vulkan/tests.zig"), .target = target, .optimize = optimize });
+
     const vk_tests = b.addTest(.{
         .name = "vktests",
-        .target = target,
-        .optimize = optimize,
-        .root_source_file = b.path("src/vulkan/tests.zig"),
+        .root_module = vk_tests_mod,
     });
 
     vk_tests.addIncludePath(vulkan_sdk_path.path(b, "Include"));
