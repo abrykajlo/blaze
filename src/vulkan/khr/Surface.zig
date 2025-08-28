@@ -5,21 +5,21 @@ const c = @cImport({
     @cInclude("SDL3/SDL_vulkan.h");
 });
 
-const vk = @import("vk.zig");
-const Window = @import("../Window.zig");
+const vk = @import("../vk.zig");
+const Window = @import("../../Window.zig");
 
-const SurfaceKHR = @This();
+const Surface = @This();
 
 ptr: *anyopaque,
 
-pub fn create(window: *const Window, instance: vk.Instance) !SurfaceKHR {
-    var surface: SurfaceKHR = undefined;
+pub fn create(window: *const Window, instance: vk.Instance) !Surface {
+    var surface: Surface = undefined;
     if (!c.SDL_Vulkan_CreateSurface(@ptrCast(window.sdl_window), @ptrCast(instance.ptr), null, @ptrCast(&surface.ptr))) {
         return error.CreateSurfaceError;
     }
     return surface;
 }
 
-pub fn destroy(self: SurfaceKHR, instance: vk.Instance) void {
+pub fn destroy(self: Surface, instance: vk.Instance) void {
     c.vkDestroySurfaceKHR(@ptrCast(instance.ptr), @ptrCast(self.ptr), null);
 }
