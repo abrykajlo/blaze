@@ -83,8 +83,9 @@ pub const Version = packed struct(u32) {
 pub const StructureType = enum(c_int) {
     application_info = c.VK_STRUCTURE_TYPE_APPLICATION_INFO,
     instance_create_info = c.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-    device_create_info = c.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
     device_queue_create_info = c.VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+    device_create_info = c.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+    swapchain_create_info_khr = c.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
 };
 
 pub const ApplicationInfo = extern struct {

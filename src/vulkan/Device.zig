@@ -12,6 +12,11 @@ pub fn destroy(self: Device) void {
     c.vkDestroyDevice(@ptrCast(self.ptr), null);
 }
 
+pub fn createSwapchain(self: Device, create_info: *const vk.khr.Swapchain) !vk.khr.Swapchain {
+    var swapchain: vk.khr.Swapchain = undefined;
+    c.vkCreateSwapchainKHR(@ptrCast(self.ptr), @ptrCast(create_info), null, @ptrCast(&swapchain.ptr));
+}
+
 pub const Size = u64;
 
 pub const CreateInfo = extern struct {
