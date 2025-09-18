@@ -3,9 +3,12 @@ const Allocator = std.mem.Allocator;
 
 pub const c = @cImport({
     @cInclude("SDL3/SDL_vulkan.h");
+    @cInclude("vulkan/vulkan.h");
 });
 
 const vk = @import("vulkan/vk.zig");
+
+const util = @import("util.zig");
 
 pub const Device = struct {
     device: vk.Device,
@@ -43,7 +46,7 @@ pub const Device = struct {
         device_create_info.queueCreateInfoCount = @intCast(queue_create_infos.items.len);
         device_create_info.pQueueCreateInfos = @ptrCast(queue_create_infos.items);
 
-        device.device = try physical_device.createDevice(&device_create_info);
+        device.device = try .create(physical_device, &device_create_info);
         return device;
     }
 
@@ -70,6 +73,7 @@ pub const DeviceType = enum {
 pub const Requirements = struct {
     graphicsSupport: bool,
     presentationSupport: bool,
+    swapchainSupport: bool,
     deviceType: DeviceType,
 
     pub fn queryPhysicalDevice(self: *const Requirements, allocator: Allocator, instance: vk.Instance, physical_device: vk.PhysicalDevice) !?Queues {
@@ -79,6 +83,23 @@ pub const Requirements = struct {
         };
         if (matching_device_type) {
             return null;
+        }
+
+        if (self.swapchainSupport) {
+            const device_extensions = try physical_device.enumerateExtensionProperties(allocator);
+            defer allocator.free(device_extensions);
+
+            var swapchain_support_found = false;
+            for (device_extensions) |*extension_properties| {
+                if (util.streql(&extension_properties.extensionName, c.VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+                    swapchain_support_found = true;
+                    break;
+                }
+            }
+
+            if (!swapchain_support_found) {
+                return null;
+            }
         }
 
         const queue_family_properties = try physical_device.getQueueFamilyProperties(allocator);

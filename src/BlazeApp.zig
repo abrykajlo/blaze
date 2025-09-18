@@ -12,12 +12,15 @@ const DeviceRequirements = @import("device.zig").Requirements;
 
 const Window = @import("Window.zig");
 
+const util = @import("util.zig");
+
 const BlazeApp = @This();
 
 instance: vk.Instance,
 app_info: vk.ApplicationInfo,
 device: Device,
 surface: vk.khr.Surface,
+swapchain: vk.khr.Swapchain,
 allocator: Allocator,
 
 pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version, window: *const Window) !BlazeApp {
@@ -26,6 +29,7 @@ pub fn init(allocator: Allocator, app_name: []const u8, app_version: vk.Version,
     try blaze_app.createInstance(allocator, app_name, app_version);
     try blaze_app.createSurface(window);
     try blaze_app.createDevice();
+    // try blaze_app.createSwapchain();
 
     return blaze_app;
 }
@@ -73,7 +77,7 @@ fn createDevice(self: *BlazeApp) !void {
     const physical_devices = try self.instance.enumeratePhysicalDevices(self.allocator);
     defer self.allocator.free(physical_devices);
 
-    const device_req: DeviceRequirements = .{ .graphicsSupport = true, .presentationSupport = true, .deviceType = .discrete_gpu };
+    const device_req: DeviceRequirements = .{ .graphicsSupport = true, .presentationSupport = true, .deviceType = .discrete_gpu, .swapchainSupport = true };
     for (physical_devices) |physical_device| {
         if (try device_req.queryPhysicalDevice(self.allocator, self.instance, physical_device)) |queues| {
             self.device = try .init(self.allocator, physical_device, &device_req, &queues);
@@ -84,18 +88,25 @@ fn createDevice(self: *BlazeApp) !void {
     return error.NoSuitableDevice;
 }
 
+// fn createSwapchain(self: *BlazeApp) !void {
+//     const create_info: vk.khr.Swapchain.CreateInfo = .{};
+//     self.swapchain = try .create(
+//         self.device,
+//     );
+// }
+
 fn checkValidationLayers(self: *const BlazeApp) !void {
     const available_layers = try vk.enumerateInstanceLayerProperties(self.allocator);
     defer self.allocator.free(available_layers);
 
     outer: for (validation_layers) |layer_name| {
         for (available_layers) |*layer_properties| {
-            if (std.mem.eql(u8, std.mem.span(layer_name), std.mem.span(@as([*:0]u8, @ptrCast(&layer_properties.layerName))))) {
+            if (util.streql(layer_name, &layer_properties.layerName)) {
                 continue :outer;
             }
         }
 
-        return error.LayerNotPresent;
+        return vk.Error.LayerNotPresent;
     }
 }
 

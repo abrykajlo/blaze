@@ -10,17 +10,17 @@ const Instance = @This();
 
 ptr: *anyopaque,
 
-pub fn create(create_info: *const vk.Instance.CreateInfo) CreateError!Instance {
+pub fn create(create_info: *const vk.Instance.CreateInfo) !Instance {
     var instance: Instance = undefined;
     const result = c.vkCreateInstance(@ptrCast(create_info), null, @ptrCast(&instance.ptr));
     if (result != c.VK_SUCCESS) {
         return switch (result) {
-            c.VK_ERROR_OUT_OF_HOST_MEMORY => error.OutOfHostMemory,
-            c.VK_ERROR_OUT_OF_DEVICE_MEMORY => error.OutOfDeviceMemory,
-            c.VK_ERROR_INITIALIZATION_FAILED => error.InitializationFailed,
-            c.VK_ERROR_LAYER_NOT_PRESENT => error.LayerNotPresent,
-            c.VK_ERROR_EXTENSION_NOT_PRESENT => error.ExtensionNotPresent,
-            c.VK_ERROR_INCOMPATIBLE_DRIVER => error.IncompatibleDriver,
+            c.VK_ERROR_OUT_OF_HOST_MEMORY => vk.Error.OutOfHostMemory,
+            c.VK_ERROR_OUT_OF_DEVICE_MEMORY => vk.Error.OutOfDeviceMemory,
+            c.VK_ERROR_INITIALIZATION_FAILED => vk.Error.InitializationFailed,
+            c.VK_ERROR_LAYER_NOT_PRESENT => vk.Error.LayerNotPresent,
+            c.VK_ERROR_EXTENSION_NOT_PRESENT => vk.Error.ExtensionNotPresent,
+            c.VK_ERROR_INCOMPATIBLE_DRIVER => vk.Error.IncompatibleDriver,
             else => unreachable,
         };
     }
@@ -63,13 +63,4 @@ pub const CreateInfo = extern struct {
         self.enabledExtensionCount = @intCast(enabled_extension_names.len);
         self.ppEnabledExtensionNames = enabled_extension_names.ptr;
     }
-};
-
-const CreateError = error{
-    OutOfHostMemory,
-    OutOfDeviceMemory,
-    InitializationFailed,
-    LayerNotPresent,
-    ExtensionNotPresent,
-    IncompatibleDriver,
 };

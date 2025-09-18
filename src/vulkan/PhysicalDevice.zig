@@ -22,6 +22,14 @@ pub fn getProperties(self: PhysicalDevice) Properties {
     return properties;
 }
 
+pub fn enumerateExtensionProperties(self: PhysicalDevice, allocator: std.mem.Allocator) ![]vk.ExtensionProperties {
+    var property_count: u32 = undefined;
+    _ = c.vkEnumerateDeviceExtensionProperties(@ptrCast(self.ptr), null, &property_count, null);
+    const properties = try allocator.alloc(vk.ExtensionProperties, property_count);
+    _ = c.vkEnumerateDeviceExtensionProperties(@ptrCast(self.ptr), null, &property_count, @ptrCast(properties));
+    return properties;
+}
+
 pub fn getQueueFamilyProperties(self: PhysicalDevice, allocator: std.mem.Allocator) ![]vk.QueueFamilyProperties {
     var property_count: u32 = undefined;
     _ = c.vkGetPhysicalDeviceQueueFamilyProperties(@ptrCast(self.ptr), &property_count, null);
@@ -29,34 +37,6 @@ pub fn getQueueFamilyProperties(self: PhysicalDevice, allocator: std.mem.Allocat
     _ = c.vkGetPhysicalDeviceQueueFamilyProperties(@ptrCast(self.ptr), &property_count, @ptrCast(properties));
     return properties;
 }
-
-pub fn createDevice(self: PhysicalDevice, create_info: *const vk.Device.CreateInfo) CreateDeviceError!vk.Device {
-    var device: vk.Device = undefined;
-    const result = c.vkCreateDevice(@ptrCast(self.ptr), @ptrCast(create_info), null, @ptrCast(&device.ptr));
-    if (result != c.VK_SUCCESS) {
-        return switch (result) {
-            c.VK_ERROR_OUT_OF_HOST_MEMORY => error.OutOfHostMemory,
-            c.VK_ERROR_OUT_OF_DEVICE_MEMORY => error.OutOfDeviceMemory,
-            c.VK_ERROR_INITIALIZATION_FAILED => error.InitializationFailed,
-            c.VK_ERROR_EXTENSION_NOT_PRESENT => error.ExtensionNotPresent,
-            c.VK_ERROR_FEATURE_NOT_PRESENT => error.FeatureNotPresent,
-            c.VK_ERROR_TOO_MANY_OBJECTS => error.TooManyObjects,
-            c.VK_ERROR_DEVICE_LOST => error.DeviceLost,
-            else => unreachable,
-        };
-    }
-    return device;
-}
-
-pub const CreateDeviceError = error{
-    OutOfHostMemory,
-    OutOfDeviceMemory,
-    InitializationFailed,
-    ExtensionNotPresent,
-    FeatureNotPresent,
-    TooManyObjects,
-    DeviceLost,
-};
 
 pub const Features = extern struct {
     robustBufferAccess: vk.Bool32,

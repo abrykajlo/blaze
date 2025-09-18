@@ -8,6 +8,20 @@ const SwapChain = @This();
 
 ptr: *anyopaque,
 
+pub fn create(device: vk.Device, create_info: *const vk.khr.Swapchain.CreateInfo) !vk.khr.Swapchain {
+    var swapchain: vk.khr.Swapchain = undefined;
+    const result = c.vkCreateSwapchainKHR(@ptrCast(device.ptr), @ptrCast(create_info), null, @ptrCast(&swapchain.ptr));
+    if (result != c.VK_SUCCESS) {
+        return switch (result) {
+            c.VK_ERROR_COMPRESSION_EXHAUSTED_EXT => vk.Error.CompressionExhaustedExt,
+        };
+    }
+}
+
+pub fn destroy(self: SwapChain, device: vk.Device) void {
+    c.vkDestroySwapchainKHR(@ptrCast(device.ptr), @ptrCast(self.ptr), null);
+}
+
 pub const CreateInfo = extern struct {
     sType: vk.StructureType = .swapchain_create_info_khr,
     pNext: ?*const anyopaque = null,
@@ -28,3 +42,5 @@ pub const CreateInfo = extern struct {
     clipped: vk.Bool32 = 0,
     oldSwapchain: vk.khr.Swapchain = .{},
 };
+
+pub const CreateFlags = packed struct {};

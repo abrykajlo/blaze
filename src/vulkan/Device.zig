@@ -8,13 +8,26 @@ const Device = @This();
 
 ptr: *anyopaque,
 
-pub fn destroy(self: Device) void {
-    c.vkDestroyDevice(@ptrCast(self.ptr), null);
+pub fn create(physical_device: vk.PhysicalDevice, create_info: *const vk.Device.CreateInfo) !vk.Device {
+    var device: vk.Device = undefined;
+    const result = c.vkCreateDevice(@ptrCast(physical_device.ptr), @ptrCast(create_info), null, @ptrCast(&device.ptr));
+    if (result != c.VK_SUCCESS) {
+        return switch (result) {
+            c.VK_ERROR_OUT_OF_HOST_MEMORY => error.OutOfHostMemory,
+            c.VK_ERROR_OUT_OF_DEVICE_MEMORY => error.OutOfDeviceMemory,
+            c.VK_ERROR_INITIALIZATION_FAILED => error.InitializationFailed,
+            c.VK_ERROR_EXTENSION_NOT_PRESENT => error.ExtensionNotPresent,
+            c.VK_ERROR_FEATURE_NOT_PRESENT => error.FeatureNotPresent,
+            c.VK_ERROR_TOO_MANY_OBJECTS => error.TooManyObjects,
+            c.VK_ERROR_DEVICE_LOST => error.DeviceLost,
+            else => unreachable,
+        };
+    }
+    return device;
 }
 
-pub fn createSwapchain(self: Device, create_info: *const vk.khr.Swapchain) !vk.khr.Swapchain {
-    var swapchain: vk.khr.Swapchain = undefined;
-    c.vkCreateSwapchainKHR(@ptrCast(self.ptr), @ptrCast(create_info), null, @ptrCast(&swapchain.ptr));
+pub fn destroy(self: Device) void {
+    c.vkDestroyDevice(@ptrCast(self.ptr), null);
 }
 
 pub const Size = u64;
